@@ -48,11 +48,11 @@ fi
 JDK_NAMES=("JDK 8" "JDK 11" "JDK 17" "JDK 21" "JDK 24")
 JDK_KEYS=(8 11 17 21 24)
 JDK_DESC=(
-  "Legacy Minecraft (Forge 1.12, Spigot 1.8)"
-  "Minecraft 1.16.x, older Fabric"
-  "Minecraft 1.18-1.20, modern Forge"
-  "Minecraft 1.21+, Paper, latest plugins"
-  "Latest features, preview builds"
+  "LTS — oldest, legacy apps"
+  "LTS — older projects, Minecraft 1.16"
+  "LTS — modern apps, Minecraft 1.18-1.20"
+  "LTS — current default, Minecraft 1.21+"
+  "Latest — preview, bleeding edge"
 )
 
 # ── State ────────────────────────────────────────────────
