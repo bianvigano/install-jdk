@@ -95,7 +95,7 @@ draw_menu() {
   echo -e "  ${WHT}${BLD}║${NC}     ${MAG}${BLD}🔧 INSTALL JDK — Pilih Versi${NC}"
   echo -e "  ${WHT}${BLD}╚══════════════════════════════════════════════╝${NC}"
   echo ""
-  echo -e "  ${DIM}OS: $OS   |   ←↑↓→ pilih   |   [Space] centang   |   [Enter] install   |   [q] batal${NC}"
+  echo -e "  ${DIM}OS: $OS   |   [Space] centang   |   [Enter] install   |   [r] hapus   |   [d] uninstall   |   [q] batal${NC}"
   echo ""
 
   for i in "${!JDK_KEYS[@]}"; do
@@ -131,7 +131,7 @@ draw_menu() {
     fi
   done
   echo ""
-  echo -e "  ${DIM}[Enter] Install   [Space] Pilih   [a] Semua   [d] Uninstall   [q] Batal${NC}"
+  echo -e "  ${DIM}[Enter] Install   [Space] Pilih   [a] Semua   [r] Hapus per baris   [d] Uninstall   [q] Batal${NC}"
   echo ""
 }
 
@@ -377,6 +377,9 @@ while true; do
     'd'|'D')
       uninstall_from_menu
       ;;
+    'r'|'R')
+      remove_single_jdk
+      ;;
     '')  # Enter
       install_selected
       ;;
@@ -517,6 +520,86 @@ uninstall_from_menu() {
 
   echo ""
   ok "Uninstall selesai."
+  echo ""
+  echo -ne "  ${DIM}Press Enter...${NC}"; read -r
+}
+
+# ── Remove single JDK (from menu, per cursor position) ──
+remove_single_jdk() {
+  local v="${JDK_KEYS[$POS]}"
+  local name="${JDK_NAMES[$POS]}"
+
+  # Only allow removing installed JDKs (state=done)
+  if [[ "${SELECTED[$POS]}" != "done" ]]; then
+    warn "$name belum terinstall — hanya JDK [✓] yang bisa dihapus."
+    sleep 1
+    return
+  fi
+
+  clear 2>/dev/null || true
+  echo ""
+  echo -e "  ${WHT}${BLD}╔══════════════════════════════════════════════╗${NC}"
+  echo -e "  ${WHT}${BLD}║${NC}     ${RED}${BLD}🗑  HAPUS ${name}${NC}"
+  echo -e "  ${WHT}${BLD}╚══════════════════════════════════════════════╝${NC}"
+  echo ""
+
+  # Find the package name
+  local pkg=""
+  for prefix in "temurin-${v}-jdk" "openjdk-${v}-jdk" "openjdk-${v}-jdk-headless"; do
+    if dpkg -l "$prefix" &>/dev/null 2>&1; then
+      pkg="$prefix"
+      break
+    fi
+  done
+
+  if [[ -z "$pkg" ]]; then
+    # Package not found via dpkg, try removing JVM dir directly
+    local removed=false
+    for jvm_dir in "/usr/lib/jvm/java-${v}-openjdk-amd64" "/usr/lib/jvm/temurin-${v}-jdk-amd64"; do
+      if [[ -d "$jvm_dir" ]]; then
+        echo -ne "  ${YLW}Remove $jvm_dir? [y/N]${NC} "
+        read -r confirm
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+          $SUDO rm -rf "$jvm_dir" && ok "Removed $jvm_dir"
+          removed=true
+        fi
+      fi
+    done
+    if $removed; then
+      SELECTED[$POS]="false"
+      INSTALLED[$POS]="false"
+      ok "$name dihapus."
+    else
+      warn "Package for $name not found."
+    fi
+  else
+    echo -e "  ${DIM}Package:${NC} ${RED}$pkg${NC}"
+    echo ""
+    echo -ne "  ${YLW}Remove $pkg? [y/N]${NC} "
+    read -r confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+      warn "Dibatalkan."
+    else
+      echo ""
+      info "Removing $pkg..."
+      if $SUDO apt-get remove -y -qq "$pkg" 2>/dev/null; then
+        ok "Removed $pkg"
+        # Clean JVM dir
+        for jvm_dir in "/usr/lib/jvm/java-${v}-openjdk-amd64" "/usr/lib/jvm/temurin-${v}-jdk-amd64"; do
+          [[ -d "$jvm_dir" ]] && $SUDO rm -rf "$jvm_dir" && ok "Cleaned $jvm_dir"
+        done
+        SELECTED[$POS]="false"
+        INSTALLED[$POS]="false"
+        # Jump cursor to first available
+        POS=0
+        while [[ $POS -lt ${#JDK_KEYS[@]} ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS + 1)); done
+        [[ $POS -ge ${#JDK_KEYS[@]} ]] && POS=0
+      else
+        err "Failed to remove $pkg"
+      fi
+    fi
+  fi
+
   echo ""
   echo -ne "  ${DIM}Press Enter...${NC}"; read -r
 }
