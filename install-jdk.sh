@@ -509,8 +509,12 @@ remove_single_jdk() {
     done
     if $removed; then
       SELECTED[$POS]="false"
-      INSTALLED[$POS]="false"
       ok "$name dihapus."
+      # Re-scan: check if still installed
+      if find /usr/lib/jvm -maxdepth 1 \( -name "java-${v}-*" -o -name "temurin-${v}-*" \) 2>/dev/null | grep -q .; then
+        SELECTED[$POS]="done"
+        warn "JVM dir masih ada — mungkin bukan dari apt."
+      fi
     else
       warn "Package for $name not found."
     fi
@@ -530,8 +534,13 @@ remove_single_jdk() {
         for jvm_dir in "/usr/lib/jvm/java-${v}-openjdk-amd64" "/usr/lib/jvm/temurin-${v}-jdk-amd64"; do
           [[ -d "$jvm_dir" ]] && $SUDO rm -rf "$jvm_dir" && ok "Cleaned $jvm_dir"
         done
+        # Reset state after successful uninstall
         SELECTED[$POS]="false"
         INSTALLED[$POS]="false"
+        # Re-scan: really gone?
+        if command -v javac &>/dev/null && javac --version 2>&1 | grep -q "javac $v\b"; then
+          SELECTED[$POS]="done"
+        fi
         # Jump cursor to first available
         POS=0
         while [[ $POS -lt ${#JDK_KEYS[@]} ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS + 1)); done
