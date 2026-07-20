@@ -324,68 +324,6 @@ EOF
   exit 0
 }
 
-# ── Main Loop ────────────────────────────────────────────
-# Auto mode if piped (curl | bash) or --all flag
-if ! $INTERACTIVE || $AUTO_ALL; then
-  auto_install_all
-fi
-
-while true; do
-  draw_menu
-
-  # Read single keypress
-  IFS= read -rsn1 key
-
-  case "$key" in
-    $'\x1b')  # Escape sequence (arrow keys)
-      read -rsn2 -t 0.001 rest || true
-      case "$rest" in
-        '[A')  # Up
-          POS=$((POS - 1))
-          while [[ $POS -ge 0 ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS - 1)); done
-          [[ $POS -lt 0 ]] && POS=0
-          ;;
-        '[B')  # Down
-          POS=$((POS + 1))
-          while [[ $POS -lt ${#JDK_KEYS[@]} ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS + 1)); done
-          [[ $POS -ge ${#JDK_KEYS[@]} ]] && POS=$((${#JDK_KEYS[@]} - 1))
-          ;;
-      esac
-      ;;
-    ' ')  # Toggle checkbox
-      if [[ "${SELECTED[$POS]}" == "false" ]]; then
-        SELECTED[$POS]="true"
-      elif [[ "${SELECTED[$POS]}" == "true" ]]; then
-        SELECTED[$POS]="false"
-      fi
-      ;;
-    'a'|'A')  # Select all
-      for i in "${!JDK_KEYS[@]}"; do
-        [[ "${SELECTED[$i]}" != "done" ]] && SELECTED[$i]="true"
-      done
-      ;;
-    'n'|'N')  # Deselect all
-      for i in "${!JDK_KEYS[@]}"; do
-        [[ "${SELECTED[$i]}" != "done" ]] && SELECTED[$i]="false"
-      done
-      ;;
-    'q'|'Q')
-      echo ""
-      warn "Dibatalkan."
-      exit 0
-      ;;
-    'd'|'D')
-      uninstall_from_menu
-      ;;
-    'r'|'R')
-      remove_single_jdk
-      ;;
-    '')  # Enter
-      install_selected
-      ;;
-  esac
-done
-
 # ── Uninstall Mode ──────────────────────────────────────
 uninstall_jdks() {
   clear 2>/dev/null || true
@@ -608,3 +546,64 @@ remove_single_jdk() {
 if $UNINSTALL; then
   uninstall_jdks
 fi
+# ── Main Loop ────────────────────────────────────────────
+# Auto mode if piped (curl | bash) or --all flag
+if ! $INTERACTIVE || $AUTO_ALL; then
+  auto_install_all
+fi
+
+while true; do
+  draw_menu
+
+  # Read single keypress
+  IFS= read -rsn1 key
+
+  case "$key" in
+    $'\x1b')  # Escape sequence (arrow keys)
+      read -rsn2 -t 0.001 rest || true
+      case "$rest" in
+        '[A')  # Up
+          POS=$((POS - 1))
+          while [[ $POS -ge 0 ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS - 1)); done
+          [[ $POS -lt 0 ]] && POS=0
+          ;;
+        '[B')  # Down
+          POS=$((POS + 1))
+          while [[ $POS -lt ${#JDK_KEYS[@]} ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS + 1)); done
+          [[ $POS -ge ${#JDK_KEYS[@]} ]] && POS=$((${#JDK_KEYS[@]} - 1))
+          ;;
+      esac
+      ;;
+    ' ')  # Toggle checkbox
+      if [[ "${SELECTED[$POS]}" == "false" ]]; then
+        SELECTED[$POS]="true"
+      elif [[ "${SELECTED[$POS]}" == "true" ]]; then
+        SELECTED[$POS]="false"
+      fi
+      ;;
+    'a'|'A')  # Select all
+      for i in "${!JDK_KEYS[@]}"; do
+        [[ "${SELECTED[$i]}" != "done" ]] && SELECTED[$i]="true"
+      done
+      ;;
+    'n'|'N')  # Deselect all
+      for i in "${!JDK_KEYS[@]}"; do
+        [[ "${SELECTED[$i]}" != "done" ]] && SELECTED[$i]="false"
+      done
+      ;;
+    'q'|'Q')
+      echo ""
+      warn "Dibatalkan."
+      exit 0
+      ;;
+    'd'|'D')
+      uninstall_from_menu
+      ;;
+    'r'|'R')
+      remove_single_jdk
+      ;;
+    '')  # Enter
+      install_selected
+      ;;
+  esac
+done
