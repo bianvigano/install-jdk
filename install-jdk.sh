@@ -564,12 +564,10 @@ while true; do
       case "$rest" in
         '[A')  # Up
           POS=$((POS - 1))
-          while [[ $POS -ge 0 ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS - 1)); done
           [[ $POS -lt 0 ]] && POS=0
           ;;
         '[B')  # Down
           POS=$((POS + 1))
-          while [[ $POS -lt ${#JDK_KEYS[@]} ]] && [[ "${SELECTED[$POS]}" == "done" ]]; do POS=$((POS + 1)); done
           [[ $POS -ge ${#JDK_KEYS[@]} ]] && POS=$((${#JDK_KEYS[@]} - 1))
           ;;
       esac
