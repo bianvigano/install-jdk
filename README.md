@@ -1,46 +1,42 @@
 # install-jdk
 
-Interactive checkbox-style multi-JDK installer for Debian/Ubuntu.
+One script, dual purpose — install or uninstall Java JDKs.
+
+## Install
 
 ```bash
+# Interactive (terminal) — checkbox menu
+curl -O https://raw.githubusercontent.com/bianvigano/install-jdk/main/install-jdk.sh
+sudo bash install-jdk.sh
+
+# Non-interactive (pipe) — auto-install all
 curl -fsSL https://raw.githubusercontent.com/bianvigano/install-jdk/main/install-jdk.sh | bash
+
+# Auto-install in terminal
+sudo bash install-jdk.sh --all
 ```
 
-## Tampilan
+## Uninstall
 
-```
-╔══════════════════════════════════════════════╗
-║     🔧 INSTALL JDK — Pilih Versi
-╚══════════════════════════════════════════════╝
-
-  ←↑↓→ pilih | [Space] centang | [Enter] install | [q] batal
-
-  [✓] JDK 8   — Legacy Minecraft (Forge 1.12, Spigot 1.8)
-  [✔] JDK 11  — Minecraft 1.16.x, older Fabric
-  [✔] JDK 17  — Minecraft 1.18-1.20, modern Forge
-  [ ] JDK 21  — Minecraft 1.21+, Paper, latest plugins
-  [ ] JDK 24  — Latest features, preview builds
-
-  Terpilih: 2
-    → JDK 11
-    → JDK 17
+```bash
+sudo bash install-jdk.sh --uninstall
 ```
 
-## Controls
+## Modes
 
-| Key | Action |
+| Mode | Command |
 |---|---|
-| `↑` `↓` | Pindah pilihan |
-| `Space` | Centang / hapus centang |
-| `a` | Pilih semua |
-| `n` | Hapus semua |
-| `Enter` | Install yang dipilih |
-| `q` | Batal |
+| Checkbox menu | `sudo bash install-jdk.sh` (TTY) |
+| Auto-install all | `curl \| bash` or `--all` |
+| Uninstall | `--uninstall` |
 
-## Features
+## Supported
 
-- Auto-detect JDK yang sudah terpasang (tampil [✓] hijau)
-- Deskripsi tiap versi (rekomendasi Minecraft dll)
-- Temurin dulu, fallback OpenJDK
-- Set JDK 21 jadi default + JAVA_HOME
-- Support Debian & Ubuntu
+- Debian / Ubuntu
+- JDK 8, 11, 17, 21, 24
+- Temurin first, OpenJDK fallback
+- Auto-set JAVA_HOME + default JDK 21
+
+## License
+
+MIT
