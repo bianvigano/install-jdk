@@ -445,6 +445,13 @@ uninstall_from_menu() {
 
   $SUDO apt-get autoremove -y -qq 2>/dev/null || true
 
+  # Reset all states after full uninstall
+  for i in "${!JDK_KEYS[@]}"; do
+    SELECTED[$i]="false"
+    INSTALLED[$i]="false"
+  done
+  POS=0
+
   # Clean leftovers
   for v in "${JDK_KEYS[@]}"; do
     for jvm_dir in /usr/lib/jvm/java-${v}-openjdk-amd64 /usr/lib/jvm/temurin-${v}-jdk-amd64; do
