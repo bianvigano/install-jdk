@@ -7,6 +7,15 @@
 
 set -Eeuo pipefail
 
+# Check if stdin is a terminal (interactive) or pipe (curl | bash)
+INTERACTIVE=false
+[[ -t 0 ]] && INTERACTIVE=true
+
+AUTO_ALL=false
+if [[ "${1:-}" == "--all" ]]; then
+  AUTO_ALL=true
+fi
+
 RED='\033[0;31m'; GRN='\033[0;32m'; YLW='\033[1;33m'
 CYA='\033[0;36m'; MAG='\033[0;35m'; WHT='\033[1;37m'; NC='\033[0m'
 BLD='\033[1m'; DIM='\033[2m'; REV='\033[7m'
@@ -222,7 +231,100 @@ EOF
   exit 0
 }
 
+# ── Non-interactive auto-install ─────────────────────────
+auto_install_all() {
+  clear 2>/dev/null || true
+  echo ""
+  echo "════════════════════════════════════════════"
+  echo "  JDK Auto-Installer (non-interactive)"
+  echo "════════════════════════════════════════════"
+  echo ""
+  echo " Installing: JDK 8, 11, 17, 21, 24"
+  echo ""
+
+  # Mark all not-done as selected
+  for i in "${!JDK_KEYS[@]}"; do
+    [[ "${SELECTED[$i]}" != "done" ]] && SELECTED[$i]="true"
+  done
+
+  local count; count=$(count_selected)
+  if [[ $count -eq 0 ]]; then
+    ok "All JDK versions already installed."
+    java --version 2>&1 || true
+    exit 0
+  fi
+
+  $SUDO apt-get update -qq 2>/dev/null || true
+
+  for i in "${!JDK_KEYS[@]}"; do
+    [[ "${SELECTED[$i]}" != "true" ]] && continue
+    local v="${JDK_KEYS[$i]}"
+    echo ""
+    info "Installing JDK $v..."
+
+    local pkg=""
+    if apt-cache show "temurin-${v}-jdk" &>/dev/null 2>&1; then
+      pkg="temurin-${v}-jdk"
+    elif apt-cache show "openjdk-${v}-jdk" &>/dev/null 2>&1; then
+      pkg="openjdk-${v}-jdk"
+    elif apt-cache show "openjdk-${v}-jdk-headless" &>/dev/null 2>&1; then
+      pkg="openjdk-${v}-jdk-headless"
+    else
+      err "JDK $v: no package found. Skipped."
+      continue
+    fi
+
+    if $SUDO apt-get install -y -qq "$pkg" 2>/dev/null; then
+      ok "JDK $v ($pkg)"
+    else
+      err "JDK $v failed to install."
+    fi
+  done
+
+  # Default + JAVA_HOME
+  echo ""
+  info "Setting JDK 21 as default..."
+  for cmd in java javac jar; do
+    for jvm_dir in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/temurin-21-jdk-amd64; do
+      if [[ -f "$jvm_dir/bin/$cmd" ]]; then
+        $SUDO update-alternatives --set "$cmd" "$jvm_dir/bin/$cmd" 2>/dev/null || true
+        break
+      fi
+    done
+  done
+
+  local jh=""
+  for d in /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/temurin-21-jdk-amd64; do
+    if [[ -d "$d" ]]; then jh="$d"; break; fi
+  done
+
+  if [[ -n "$jh" ]]; then
+    if ! grep -q "JAVA_HOME" /etc/environment 2>/dev/null; then
+      echo "JAVA_HOME=$jh" | $SUDO tee -a /etc/environment >/dev/null
+    fi
+    $SUDO tee /etc/profile.d/jdk.sh >/dev/null <<EOF
+export JAVA_HOME=$jh
+export PATH=\$JAVA_HOME/bin:\$PATH
+EOF
+    $SUDO chmod 644 /etc/profile.d/jdk.sh
+    ok "JAVA_HOME=$jh"
+  fi
+
+  echo ""
+  ok "Done!"
+  java --version 2>&1 || true
+  echo ""
+  echo "  Run: source /etc/profile.d/jdk.sh"
+  echo ""
+  exit 0
+}
+
 # ── Main Loop ────────────────────────────────────────────
+# Auto mode if piped (curl | bash) or --all flag
+if ! $INTERACTIVE || $AUTO_ALL; then
+  auto_install_all
+fi
+
 while true; do
   draw_menu
 
