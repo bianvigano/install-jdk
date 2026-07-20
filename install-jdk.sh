@@ -105,20 +105,24 @@ draw_menu() {
     local prefix="  "
     local mark="[ ]"
     local color="$DIM"
+    local cursor=""
 
     if [[ $i -eq $POS ]]; then
-      prefix="  ${REV}"
-      color=""
+      cursor="${WHT}${BLD}▸${NC} "
+      color="${WHT}"
+    else
+      cursor="  "
     fi
 
     if [[ "$state" == "done" ]]; then
       mark="[✓]"
       color="${GRN}"
     elif [[ "$state" == "true" ]]; then
-      mark="[${CYA}✔${NC}${color}]"
+      mark="[✔]"
+      color="${CYA}"
     fi
 
-    echo -e "${prefix}${color}  ${mark} ${BLD}${name}${NC}${color}  ${DIM}— ${desc}${NC}\033[0m"
+    echo -e "  ${cursor}${color}${mark} ${BLD}${name}${NC}  ${DIM}— ${desc}${NC}"
   done
 
   echo ""
