@@ -131,6 +131,8 @@ draw_menu() {
     fi
   done
   echo ""
+  echo -e "  ${DIM}[Enter] Install   [Space] Pilih   [a] Semua   [d] Uninstall   [q] Batal${NC}"
+  echo ""
 }
 
 count_selected() {
@@ -372,6 +374,9 @@ while true; do
       warn "Dibatalkan."
       exit 0
       ;;
+    'd'|'D')
+      uninstall_from_menu
+      ;;
     '')  # Enter
       install_selected
       ;;
@@ -443,6 +448,77 @@ uninstall_jdks() {
   echo ""
   ok "Uninstall selesai."
   exit 0
+}
+
+# ── Uninstall from menu (interactive) ────────────────────
+uninstall_from_menu() {
+  clear 2>/dev/null || true
+  echo ""
+  echo -e "  ${WHT}${BLD}╔══════════════════════════════════════════════╗${NC}"
+  echo -e "  ${WHT}${BLD}║${NC}     ${RED}${BLD}🗑  UNINSTALL JDK${NC}"
+  echo -e "  ${WHT}${BLD}╚══════════════════════════════════════════════╝${NC}"
+  echo ""
+
+  # Find installed JDK packages
+  local pkg_list=()
+  for v in "${JDK_KEYS[@]}"; do
+    for prefix in "temurin-${v}-jdk" "openjdk-${v}-jdk" "openjdk-${v}-jdk-headless"; do
+      if dpkg -l "$prefix" &>/dev/null 2>&1; then
+        pkg_list+=("$prefix")
+        break
+      fi
+    done
+  done
+
+  if [[ ${#pkg_list[@]} -eq 0 ]]; then
+    ok "No JDK packages found."
+    echo ""
+    echo -ne "  ${DIM}Press Enter...${NC}"; read -r
+    return
+  fi
+
+  echo -e "  ${DIM}Found packages:${NC}"
+  for p in "${pkg_list[@]}"; do
+    echo -e "    ${RED}✗${NC} $p"
+  done
+  echo ""
+
+  echo -ne "  ${YLW}Remove ALL installed JDKs? [y/N]${NC} "
+  read -r confirm
+  if [[ "$confirm" != "y" ]] && [[ "$confirm" != "Y" ]]; then
+    warn "Dibatalkan."
+    echo ""
+    echo -ne "  ${DIM}Press Enter...${NC}"; read -r
+    return
+  fi
+
+  echo ""
+  for p in "${pkg_list[@]}"; do
+    info "Removing $p..."
+    $SUDO apt-get remove -y -qq "$p" 2>/dev/null && ok "Removed $p" || err "Failed: $p"
+  done
+
+  $SUDO apt-get autoremove -y -qq 2>/dev/null || true
+
+  # Clean leftovers
+  for v in "${JDK_KEYS[@]}"; do
+    for jvm_dir in /usr/lib/jvm/java-${v}-openjdk-amd64 /usr/lib/jvm/temurin-${v}-jdk-amd64; do
+      if [[ -d "$jvm_dir" ]]; then
+        info "Removing leftover: $jvm_dir"
+        $SUDO rm -rf "$jvm_dir" 2>/dev/null && ok "Cleaned $jvm_dir"
+      fi
+    done
+  done
+
+  if ! find /usr/lib/jvm -maxdepth 1 -type d \( -name 'java-*' -o -name 'temurin-*' \) 2>/dev/null | grep -q .; then
+    $SUDO rm -f /etc/profile.d/jdk.sh
+    ok "Removed /etc/profile.d/jdk.sh"
+  fi
+
+  echo ""
+  ok "Uninstall selesai."
+  echo ""
+  echo -ne "  ${DIM}Press Enter...${NC}"; read -r
 }
 
 # Trigger uninstall
