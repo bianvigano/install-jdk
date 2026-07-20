@@ -1,41 +1,46 @@
 # install-jdk
 
-One-command multi-JDK installer for Debian/Ubuntu.
+Interactive checkbox-style multi-JDK installer for Debian/Ubuntu.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bianvigano/install-jdk/main/install-jdk.sh | bash
 ```
 
-## What it does
+## Tampilan
 
-- Installs JDK 8, 11, 17, 21, 24
-- Tries Eclipse Temurin first, falls back to OpenJDK
-- Skips already-installed versions
-- Sets JDK 21 as default (update-alternatives)
-- Configures JAVA_HOME in `/etc/environment` + `/etc/profile.d/jdk.sh`
-- Works on Debian and Ubuntu
+```
+╔══════════════════════════════════════════════╗
+║     🔧 INSTALL JDK — Pilih Versi
+╚══════════════════════════════════════════════╝
 
-## Usage
+  ←↑↓→ pilih | [Space] centang | [Enter] install | [q] batal
 
-```bash
-# From GitHub (recommended)
-curl -fsSL https://raw.githubusercontent.com/bianvigano/install-jdk/main/install-jdk.sh | bash
+  [✓] JDK 8   — Legacy Minecraft (Forge 1.12, Spigot 1.8)
+  [✔] JDK 11  — Minecraft 1.16.x, older Fabric
+  [✔] JDK 17  — Minecraft 1.18-1.20, modern Forge
+  [ ] JDK 21  — Minecraft 1.21+, Paper, latest plugins
+  [ ] JDK 24  — Latest features, preview builds
 
-# Or clone + run
-git clone https://github.com/bianvigano/install-jdk.git
-cd install-jdk
-sudo bash install-jdk.sh
+  Terpilih: 2
+    → JDK 11
+    → JDK 17
 ```
 
-## Post-install
+## Controls
 
-Restart shell or:
-```bash
-source /etc/profile.d/jdk.sh
-java --version
-javac --version
-```
+| Key | Action |
+|---|---|
+| `↑` `↓` | Pindah pilihan |
+| `Space` | Centang / hapus centang |
+| `a` | Pilih semua |
+| `n` | Hapus semua |
+| `Enter` | Install yang dipilih |
+| `q` | Batal |
 
-## License
+## Features
 
-MIT
+- Auto-detect JDK yang sudah terpasang (tampil [✓] hijau)
+- Deskripsi tiap versi (rekomendasi Minecraft dll)
+- Temurin dulu, fallback OpenJDK
+- Set JDK 21 jadi default + JAVA_HOME
+- Support Debian & Ubuntu
